@@ -204,6 +204,9 @@ class NiftiConvertCifti(wb.WBCommand):
                 _fname, ext1 = os.path.splitext(os.path.basename(self.inputs.cifti_template))
                 _, ext2 = os.path.splitext(_fname)
 
+                if self.inputs.reset_scalars:
+                    ext2 = '.dscalar'
+
                 return os.path.join(os.getcwd(), fname + ext2 + ext1)
             return self.inputs.nifti_out
 
