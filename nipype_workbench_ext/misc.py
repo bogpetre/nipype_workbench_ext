@@ -5,7 +5,7 @@ from traits.api import List
 # another quick and dirty implementation
 # note that cifti needs an input in the -cifti <index> <name> format
 # try passing inputs it into a function that reformats lists like so
-# newList = [' '.join([str(i),item]) for i,item in enumerate(oldList)]
+# newList = [' '.join([str(i+1),item]) for i,item in enumerate(oldList)]
 class SetMapNamesInputSpec(CommandLineInputSpec):
     in_file=File(
         argstr='%s',
