@@ -1,5 +1,14 @@
 from nipype.interfaces.workbench import base as wb
-from nipype.interfaces.base import BaseInterface, BaseInterfaceInputSpec, File, Str, isdefined, TraitedSpec, CommandLineInputSpec
+from nipype.interfaces.base import (
+    BaseInterface,
+    BaseInterfaceInputSpec,
+    traits,
+    File,
+    Str,
+    isdefined,
+    TraitedSpec,
+    CommandLineInputSpec
+)
 from traits.api import List
 
 # another quick and dirty implementation
@@ -15,7 +24,7 @@ class SetMapNamesInputSpec(CommandLineInputSpec):
         desc="The file to se tthe map names of."
     )
 
-    map=List(traits.Tuple(Int(), Str(),
+    map=List(traits.Tuple(traits.Int(), Str()),
         desc='specify an input cifti file list',
         argstr='-map %d %s...',
         mandatory=True,
