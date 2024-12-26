@@ -61,7 +61,7 @@ class SurfaceDistortionInputSpec(CommandLineInputSpec):
         desc="the reference surface"
     )
 
-    surface_distortion=File(
+    surface_distorted=File(
         argstr='%s',
         position=1,
         exists=True,
