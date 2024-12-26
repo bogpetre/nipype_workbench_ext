@@ -1,3 +1,15 @@
+from nipype.interfaces.workbench import base as wb
+from nipype.interfaces.base import (
+    BaseInterface, 
+    BaseInterfaceInputSpec, 
+    traits, 
+    File, 
+    isdefined, 
+    TraitedSpec, 
+    CommandLineInputSpec, 
+)
+from traits.api import List
+
 class SurfaceVertexAreasInputSpec(CommandLineInputSpec):
     surface=File(
         argstr='%s',
@@ -38,3 +50,4 @@ class SurfaceVertexAreas(wb.WBCommand):
             outputs['out_file'] = self._gen_filename('out_file')
 
         return outputs
+
