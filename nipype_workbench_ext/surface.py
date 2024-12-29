@@ -109,6 +109,7 @@ class SurfaceDistortionInputSpec(CommandLineInputSpec):
     log2=traits.Bool(False,
         argstr='-log2',
         position=8,
+        requires=['local_affine_method'],
         desc="apply base-2 log transform"
     )
 
@@ -134,7 +135,6 @@ class SurfaceDistortionAreas(wb.WBCommand):
             else:
                 basename = os.path.basename(self.inputs.out_file)
                 return os.path.join(os.getcwd(), basename)
-            return self.inputs.out_file
 
     def _list_outputs(self):
         outputs = self.output_spec().get()
