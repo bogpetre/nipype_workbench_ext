@@ -46,9 +46,11 @@ class SetMapNames(wb.WBCommand):
         import os
 
         if name == 'out_file':
-            if 'out_file' not in self.inputs.get() or not isdefined(self.inputs.out_file):
-                return self.inputs.in_file
-            return self.inputs.out_file
+#            if 'out_file' not in self.inputs.get() or not isdefined(self.inputs.out_file):
+#                return self.inputs.in_file
+#            return self.inputs.out_file
+             fname = os.path.basename(self.inputs.in_file)
+             return os.path.abspath(fname)
 
     def _list_outputs(self):
         outputs = self.output_spec().get()
@@ -56,3 +58,13 @@ class SetMapNames(wb.WBCommand):
             outputs['out_file'] = self._gen_filename('out_file')
 
         return outputs
+
+    def _run_interface(self, runtime):
+        import shutil, os
+        out_file = self._gen_filename('out_file')
+        shutil.copyfile(self.inputs.in_file, out_file)
+
+        # Redirect to copy
+        self.inputs.in_file = out_file
+        runtime = super()._run_interface(runtime)
+        return runtime
