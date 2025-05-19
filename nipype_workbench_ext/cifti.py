@@ -669,7 +669,7 @@ class CiftiCreateDenseFromTemplateInputSpec(CommandLineInputSpec):
         genfile=True,
     )
     
-    series=traits.BaseTuple((traits.BaseStr(), traits.BaseStr),
+    series=traits.BaseTuple((traits.Float(), traits.Float()),
         position=2,
         argstr='-series %s %s',
         desc="make a dtseries file instead of a dscalar. Takes (<step>, <start>) as input. \
