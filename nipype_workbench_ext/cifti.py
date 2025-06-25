@@ -54,6 +54,56 @@ _valid_cifti_structs = ['CORTEX_LEFT',
                         
 _valid_cifti_units = ['SECOND', 'HERTZ', 'METER', 'RADIAN']
 
+# This was drafted by chatGPT based on CiftiConvertNifti and NiftiConvertCifti (below)
+class CiftiConvertTextInputSpec(CommandLineInputSpec):
+    to_text = traits.Bool(True,
+        argstr="-to-text",
+        usedefault=True,
+        desc="Convert CIFTI to text")
+
+    in_file = File(
+        exists=True,
+        argstr="%s",
+        position=1,
+        mandatory=True,
+        desc="Input CIFTI file"
+    )
+
+    out_file = File(
+        argstr="%s",
+        position=2,
+        genfile=True,
+        desc="Output text file"
+    )
+
+
+class CiftiConvertTextOutputSpec(TraitedSpec):
+    out_file = File(
+        exists=True,
+        desc="Converted text output"
+    )
+
+
+class CiftiConvertText(wb.WBCommand):
+    input_spec = CiftiConvertTextInputSpec
+    output_spec = CiftiConvertTextOutputSpec
+
+    _cmd = 'wb_command -cifti-convert'
+
+    def _gen_filename(self, name):
+        import os
+        if name == 'out_file':
+            if not isdefined(self.inputs.out_file):
+                base, _ = os.path.splitext(os.path.basename(self.inputs.in_file))
+                base, _ = os.path.splitext(base)
+                return os.path.join(os.getcwd(), base + '.txt')
+            return self.inputs.out_file
+
+    def _list_outputs(self):
+        outputs = self.output_spec().get()
+        outputs['out_file'] = self._gen_filename('out_file')
+        return outputs
+
 # convert cifti to nifti and back
 # this interface was drafted by ChatGPT then heavily modified by BP.
 class CiftiConvertNiftiInputSpec(CommandLineInputSpec):
@@ -334,13 +384,28 @@ class CiftiSeparate(wb.WBCommand):
             outputs['volume_all_out'] = os.path.join(cwd, fname + '_volume_all.nii.gz')
             outputs['volume_all_roi_out'] = os.path.join(cwd, fname + '_volume_all_roi.nii.gz')
             outputs['volume_all_label_out'] = os.path.join(cwd, fname + '_volume_all_label.nii.gz')
-
+        '''
         if isdefined(self.inputs.metric):
             for structure in self.metric_files:
                 outputs[structure + '_out'] = self.metric_files[structure]
         if isdefined(self.inputs.label):
             for structure in self.label_files:
                 outputs[structure + '_out'] = self.label_files[structure]
+
+        return outputs
+        '''
+        if isdefined(self.inputs.metric):
+            cwd = os.getcwd()
+            fname, _ = os.path.splitext(os.path.basename(self.inputs.in_file))
+            fname, _ = os.path.splitext(fname)
+            for structure in self.inputs.metric:
+                outputs[structure + '_out'] = os.path.join(cwd, f"{fname}_{structure}.func.gii")
+        if isdefined(self.inputs.label):
+            cwd = os.getcwd()
+            fname, _ = os.path.splitext(os.path.basename(self.inputs.in_file))
+            fname, _ = os.path.splitext(fname)
+            for structure in self.inputs.label:
+                outputs[structure + '_out'] = os.path.join(cwd, f"{fname}_{structure}.label.gii")
 
         return outputs
 
@@ -645,8 +710,142 @@ class CiftiMerge(wb.WBCommand):
             outputs['out_file'] = self._gen_filename('out_file')
 
         return outputs
-        
-        
+
+
+# Drafted by chatGPT
+class ParcellateInputSpec(CommandLineInputSpec):
+    in_file = File(
+        exists=True,
+        argstr="%s",
+        position=0,
+        mandatory=True,
+        desc="Input CIFTI data file (e.g., dtseries.nii or dscalar.nii)"
+    )
+
+    parcellation = File(
+        exists=True,
+        argstr="%s",
+        position=1,
+        mandatory=True,
+        desc="CIFTI label file defining parcels (e.g., a dlabel.nii)"
+    )
+
+    direction = traits.Enum(
+        "COLUMN",
+        argstr="%s",
+        position=2,
+        usedefault=True,
+        desc="Reduction direction (only COLUMN is valid)"
+    )
+
+    out_file = File(
+        argstr="%s",
+        position=3,
+        genfile=True,
+        desc="Output CIFTI file"
+    )
+
+    method = traits.Enum(
+        "MEAN", "MODE", "MEDIAN", "SUM", "STDEV", "VARIANCE",
+        argstr="-method %s",
+        position=4,
+        desc="Statistical method to apply for parcellation"
+    )
+
+
+class ParcellateOutputSpec(TraitedSpec):
+    out_file = File(
+        exists=True,
+        desc="Parcellated output CIFTI file"
+    )
+
+
+class Parcellate(wb.WBCommand):
+    input_spec = ParcellateInputSpec
+    output_spec = ParcellateOutputSpec
+
+    _cmd = 'wb_command -cifti-parcellate'
+
+    def _gen_filename(self, name):
+        import os
+        if name == 'out_file':
+            if not isdefined(self.inputs.out_file):
+                base, _ = os.path.splitext(os.path.basename(self.inputs.in_file))
+                base, _ = os.path.splitext(base)
+                return os.path.join(os.getcwd(), base + '_parcellated.ptseries.nii')
+            return self.inputs.out_file
+
+    def _list_outputs(self):
+        outputs = self.output_spec().get()
+        outputs['out_file'] = self._gen_filename('out_file')
+        return outputs
+
+
+# CiftiReduce interfaces drafted by chatGPT
+class ReduceInputSpec(CommandLineInputSpec):
+    in_file = File(
+        exists=True,
+        argstr="%s",
+        position=0,
+        mandatory=True,
+        desc="Input CIFTI file"
+    )
+
+    direction = traits.Enum("ROW", "COLUMN",
+        argstr="%s",
+        position=1,
+        usedefault=True,
+        desc="Direction to reduce along")
+
+    operation = traits.Enum(
+        "MEAN", "MEDIAN", "MAX", "MIN", "STDEV", "VARIANCE",
+        "SUM", "PRODUCT", "INDEXMAX", "INDEXMIN", "MODE",
+        "COUNT_NONZERO", "L2NORM", "TSNR",
+        argstr="-reduce %s",
+        position=2,
+        mandatory=True,
+        desc="Reduction operation to apply")
+
+    exclude_outliers = traits.Tuple(
+        (traits.Float, traits.Float),
+        argstr="-exclude-outliers %f %f",
+        desc="Trim values beyond σ‑below and σ‑above")
+
+    only_numeric = traits.Bool(
+        argstr="-only-numeric",
+        desc="Filter non‑numeric values before reduction")
+
+    out_file = File(
+        argstr="%s",
+        position=-1,
+        genfile=True,
+        desc="Output CIFTI file name")
+
+class ReduceOutputSpec(TraitedSpec):
+    out_file = File(
+        exists=True,
+        desc="Reduced output CIFTI file"
+    )
+
+class Reduce(wb.WBCommand):
+    input_spec = ReduceInputSpec
+    output_spec = ReduceOutputSpec
+
+    _cmd = 'wb_command -cifti-reduce'
+
+    def _gen_filename(self, name):
+        import os
+        if name == 'out_file':
+            if not isdefined(self.inputs.out_file):
+                base, ext = os.path.splitext(os.path.basename(self.inputs.in_file))
+                base = os.path.splitext(base)[0]
+                return os.path.join(os.getcwd(), f"{base}_reduced.dscalar.nii")
+            return self.inputs.out_file
+
+    def _list_outputs(self):
+        outputs = self.output_spec().get()
+        outputs["out_file"] = self._gen_filename("out_file")
+        return outputs
 
 
 # partial implementation
